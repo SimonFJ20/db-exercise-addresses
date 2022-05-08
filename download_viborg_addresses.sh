@@ -1,0 +1,1 @@
+wget 'https://api.dataforsyningen.dk/adresser?format=csv&kommunekode=0791' -O data.csv
