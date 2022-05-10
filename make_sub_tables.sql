@@ -89,19 +89,6 @@ INSERT INTO `region` (`kode`, `navn`)
         `regionsnavn` AS `navn`
     FROM `raw`
 
-CREATE TABLE `jordstykke_ejerlav` (
-  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `kode` int NOT NULL,
-  `navn` varchar(34) NOT NULL
-);
-
-INSERT INTO `jordstykke_ejerlav` (`kode`, `navn`)
-    SELECT DISTINCT
-        `jordstykke_ejerlavkode` AS `kode`,
-        `jordstykke_ejerlavnavn` AS `navn`
-    FROM `raw`
-    WHERE NOT ISNULL(`jordstykke_ejerlavkode`)
-
 CREATE TABLE `sogn` (
   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `kode` int NOT NULL,
@@ -256,24 +243,21 @@ INSERT INTO `vejpunkt` (`guid`, `noejagtighed`, `tekniskstandard`, `kilde`, `x`,
     ON `raw`.`vejpunkt_kilde` = `vejpunkt_kilde`.`navn`
 
 CREATE TABLE `jordstykke` (
-  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `matrikelnr` varchar(15) NOT NULL,
-  `esrejendomsnr` int NOT NULL,
-  `ejerlav` int NOT NULL,
-  FOREIGN KEY (`ejerlav`) REFERENCES `jordstykke_ejerlav` (`id`)
+    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `kode` int NOT NULL,
+    `navn` varchar(34) NOT NULL,
+    `matrikelnr` varchar(15) NOT NULL,
+    `esrejendomsnr` int NULL
 );
 
-INSERT INTO `jordstykke` (`matrikelnr`, `esrejendomsnr`, `ejerlav`)
+INSERT INTO `jordstykke` (`kode`, `navn`, `matrikelnr`, `esrejendomsnr`)
     SELECT DISTINCT
+        `jordstykke_ejerlavkode` AS `kode`,
+        `jordstykke_ejerlavnavn` AS `navn`,
         `jordstykke_matrikelnr` AS `matrikelnr`,
-        `jordstykke_esrejendomsnr` AS `esrejendomsnr`,
-        `jordstykke_ejerlav`.`id` AS `ejerlav`
+        `jordstykke_esrejendomsnr` AS `esrejendomsnr`
     FROM `raw`
-    LEFT JOIN `jordstykke_ejerlav`
-    ON `jordstykke_ejerlav`.`kode` = `jordstykke_ejerlavkode`
-    WHERE
-        NOT ISNULL(`jordstykke_matrikelnr`)
-        AND NOT ISNULL(`jordstykke_esrejendomsnr`)
+    WHERE NOT ISNULL(`jordstykke_ejerlavkode`);
 
 CREATE TABLE `adgangsadresse` (
     `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -308,7 +292,7 @@ CREATE TABLE `adresse` (
     `husnr` varchar(4) NOT NULL,
     `etage` varchar(2) NULL,
     `doer` varchar(4) NULL,
-    `supplerendebynavn` int NOT NULL,
+    `supplerendebynavn` int NULL,
     `postnr` int NOT NULL,
     `stormodtagerpostnr` int NULL,
     `kommune` int NOT NULL,
@@ -372,3 +356,87 @@ CREATE TABLE `adresse` (
     FOREIGN KEY (`valglandsdel`) REFERENCES `valglandsdel` (`id`),
     FOREIGN KEY (`landsdel`) REFERENCES `landsdel` (`id`)
 );
+
+INSERT INTO adresse (
+    guid, status, oprettet, aendret, vej, adresseringsvejnavn,
+    husnr, etage, doer, supplerendebynavn, postnr, stormodtagerpostnr, kommune,
+    ejerlav, matrikelnr, esrejendomsnr, etrs89koordinat_oest, etrs89koordinat_nord,
+    wgs84koordinat_bredde, wgs84koordinat_laengde, noejagtighed, kilde, tekniskstandard,
+    ddkn_m100, ddkn_km1, ddkn_km10, adressepunktaendringsdato, adgangsadresse, region,
+    kvhx, sogn, politikreds, retskreds, opstillingskreds, zone, kvh, hoejde,
+    adgangspunktid, vejpunkt, afstemningsomraade, brofast, navngivenvej,
+    menighedsraadsafstemningsomraade, ikrafttraedelse, nedlagt, darstatus,
+    storkreds, valglandsdel, landsdel, betegnelse
+)
+SELECT 
+        raw.id AS guid
+        ,raw.status AS status
+        ,raw.oprettet AS oprettet
+        ,raw.aendret AS aendret
+        ,vej.id AS vej
+        ,raw.adresseringsvejnavn AS adresseringsvejnavn
+        ,raw.husnr AS husnr
+        ,raw.etage AS etage
+        ,raw.doer AS doer
+        ,supplerendebynavn.id as supplerendebynavn
+        ,postnr.id AS postnr
+        ,stormodtagerpostnr.id AS stormodtagerpostnr
+        ,kommune.id AS kommune
+        ,ejerlav.id AS ejerlav
+        ,raw.matrikelnr AS matrikelnr
+        ,raw.esrejendomsnr AS esrejendomsnr
+        ,raw.etrs89koordinat_oest AS etrs89koordinat_oest
+        ,raw.etrs89koordinat_nord AS etrs89koordinat_nord
+        ,raw.wgs84koordinat_bredde AS wgs84koordinat_bredde
+        ,raw.wgs84koordinat_laengde AS wgs84koordinat_laengde
+        ,raw.noejagtighed AS noejagtighed
+        ,raw.kilde AS kilde
+        ,raw.tekniskstandard AS tekniskstandard
+        ,raw.ddkn_m100 AS ddkn_m100
+        ,raw.ddkn_km1 AS ddkn_km1
+        ,raw.ddkn_km10 AS ddkn_km10
+        ,raw.adressepunktaendringsdato AS adressepunktaendringsdato
+        ,adgangsadresse.id AS adgangsadresse
+        ,region.id AS region
+        ,raw.kvhx AS kvhx
+        ,sogn.id AS sogn
+        ,politikreds.id AS politikreds
+        ,retskreds.id AS retskreds
+        ,opstillingskreds.id AS opstillingskreds
+        ,zone.id AS zone
+        ,raw.kvh AS kvh
+        ,raw.hoejde AS hoejde
+        ,raw.adgangspunktid AS adgangspunktid
+        ,vejpunkt.id AS vejpunkt
+        ,afstemningsomraade.id AS afstemningsomraade
+        ,raw.brofast AS brofast
+        ,navngivenvej.id AS navngivenvej
+        ,menighedsraadsafstemningsomraade.id AS menighedsraadsafstemningsomraade
+        ,raw.ikrafttraedelse AS ikrafttraedelse
+        ,raw.nedlagt AS nedlagt
+        ,raw.darstatus AS darstatus
+        ,storkreds.id AS storkreds
+        ,valglandsdel.id AS valglandsdel
+        ,landsdel.id AS landsdel
+        ,raw.betegnelse AS betegnelse
+    FROM raw
+    LEFT JOIN vej ON vejkode = vej.kode
+    LEFT JOIN supplerendebynavn ON raw.supplerendebynavn_dagi_id = supplerendebynavn.dagi_id
+    LEFT JOIN postnr ON postnr.nr = raw.postnr
+    LEFT JOIN stormodtagerpostnr ON stormodtagerpostnr.nr = raw.stormodtagerpostnr
+    LEFT JOIN kommune ON kommune.kode = raw.kommunekode
+    LEFT JOIN ejerlav ON ejerlav.kode = ejerlavkode
+    LEFT JOIN adgangsadresse ON adgangsadresse.guid = raw.adgangsadresseid
+    LEFT JOIN region ON region.kode = raw.regionskode
+    LEFT JOIN sogn ON sogn.kode = raw.sognekode
+    LEFT JOIN politikreds ON politikreds.kode = raw.politikredskode
+    LEFT JOIN retskreds ON retskreds.kode = raw.retskredskode
+    LEFT JOIN opstillingskreds ON opstillingskreds.kode = raw.opstillingskredskode
+    LEFT JOIN zone ON zone.navn = raw.zone
+    LEFT JOIN vejpunkt ON vejpunkt.guid = raw.vejpunkt_id
+    LEFT JOIN afstemningsomraade ON afstemningsomraade.nummer = raw.afstemningsomraadenummer
+    LEFT JOIN navngivenvej ON navngivenvej.guid = raw.navngivenvej_id
+    LEFT JOIN menighedsraadsafstemningsomraade ON menighedsraadsafstemningsomraade.nummer = raw.menighedsraadsafstemningsomraadenummer
+    LEFT JOIN storkreds ON storkreds.nummer = raw.storkredsnummer
+    LEFT JOIN valglandsdel ON valglandsdel.bogstav = raw.valglandsdelsbogstav
+    LEFT JOIN landsdel ON landsdel.nuts3 = landsdelsnuts3
