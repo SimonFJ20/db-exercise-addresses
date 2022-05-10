@@ -242,22 +242,36 @@ INSERT INTO `vejpunkt` (`guid`, `noejagtighed`, `tekniskstandard`, `kilde`, `x`,
     LEFT JOIN `vejpunkt_kilde`
     ON `raw`.`vejpunkt_kilde` = `vejpunkt_kilde`.`navn`
 
-CREATE TABLE `jordstykke` (
+CREATE TABLE `jordstykke_ejerlav` (
     `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `kode` int NOT NULL,
-    `navn` varchar(34) NOT NULL,
-    `matrikelnr` varchar(15) NOT NULL,
-    `esrejendomsnr` int NULL
-);
+    `navn` varchar(34) NOT NULL
+)
 
-INSERT INTO `jordstykke` (`kode`, `navn`, `matrikelnr`, `esrejendomsnr`)
+INSERT INTO `jordstykke_ejerlav` (`kode`, `navn`)
     SELECT DISTINCT
         `jordstykke_ejerlavkode` AS `kode`,
-        `jordstykke_ejerlavnavn` AS `navn`,
-        `jordstykke_matrikelnr` AS `matrikelnr`,
-        `jordstykke_esrejendomsnr` AS `esrejendomsnr`
+        `jordstykke_ejerlavnavn` AS `navn`
     FROM `raw`
-    WHERE NOT ISNULL(`jordstykke_ejerlavkode`);
+    WHERE NOT ISNULL(`jordstykke_ejerlavkode`)
+
+
+CREATE TABLE `jordstykke` (
+    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `matrikelnr` varchar(15) NULL,
+    `esrejendomsnr` int NULL,
+    `ejerlav` int NOT NULL,
+    FOREIGN KEY (`ejerlav`) REFERENCES `jordstykke_ejerlav` (`id`)
+);
+
+INSERT INTO `jordstykke` (`matrikelnr`, `esrejendomsnr`, `ejerlav`)
+    SELECT DISTINCT
+        `jordstykke_esrejendomsnr` AS `esrejendomsnr`,
+        `jordstykke_matrikelnr` AS `matrikelnr`,
+        `jordstykke_ejerlav`.`id` AS `jordstykke_ejerlav`
+    FROM `raw`
+    LEFT JOIN `jordstykke_ejerlav` ON `jordstykke_ejerlav`.`kode` = `jordstykke_ejerlavkode`
+    WHERE NOT ISNULL(`jordstykke_esrejendomsnr`);
 
 CREATE TABLE `adgangsadresse` (
     `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
