@@ -20,7 +20,7 @@ CREATE TABLE `raw` (
     `kommunenavn` varchar(6) NOT NULL,
     `ejerlavkode` int DEFAULT NULL,
     `ejerlavnavn` varchar(34) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-    `matrikelnr` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    `matrikelnr` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
     `esrejendomsnr` varchar(6) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
     `etrs89koordinat_oest` double NOT NULL,
     `etrs89koordinat_nord` double NOT NULL,
