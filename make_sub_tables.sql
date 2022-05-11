@@ -242,37 +242,6 @@ INSERT INTO `vejpunkt` (`guid`, `noejagtighed`, `tekniskstandard`, `kilde`, `x`,
     LEFT JOIN `vejpunkt_kilde`
     ON `raw`.`vejpunkt_kilde` = `vejpunkt_kilde`.`navn`
 
-CREATE TABLE `jordstykke_ejerlav` (
-    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `kode` int NOT NULL,
-    `navn` varchar(34) NOT NULL
-)
-
-INSERT INTO `jordstykke_ejerlav` (`kode`, `navn`)
-    SELECT DISTINCT
-        `jordstykke_ejerlavkode` AS `kode`,
-        `jordstykke_ejerlavnavn` AS `navn`
-    FROM `raw`
-    WHERE NOT ISNULL(`jordstykke_ejerlavkode`)
-
-
-CREATE TABLE `jordstykke` (
-    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `matrikelnr` varchar(15) NULL,
-    `esrejendomsnr` int NULL,
-    `ejerlav` int NOT NULL,
-    FOREIGN KEY (`ejerlav`) REFERENCES `jordstykke_ejerlav` (`id`)
-);
-
-INSERT INTO `jordstykke` (`matrikelnr`, `esrejendomsnr`, `ejerlav`)
-    SELECT DISTINCT
-        `jordstykke_esrejendomsnr` AS `esrejendomsnr`,
-        `jordstykke_matrikelnr` AS `matrikelnr`,
-        `jordstykke_ejerlav`.`id` AS `jordstykke_ejerlav`
-    FROM `raw`
-    LEFT JOIN `jordstykke_ejerlav` ON `jordstykke_ejerlav`.`kode` = `jordstykke_ejerlavkode`
-    WHERE NOT ISNULL(`jordstykke_esrejendomsnr`);
-
 CREATE TABLE `adgangsadresse` (
     `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `guid` varchar(36) NOT NULL,
@@ -326,13 +295,15 @@ CREATE TABLE `adresse` (
     `adressepunktaendringsdato` varchar(23) NOT NULL,
     `adgangsadresse` int NOT NULL,
     `region` int NOT NULL,
-    `jordstykke` int NULL,
     `kvhx` varchar(21) NOT NULL,
     `sogn` int NOT NULL,
     `politikreds` int NOT NULL,
     `retskreds` int NOT NULL,
     `opstillingskreds` int NOT NULL,
     `zone` int NOT NULL,
+    `jordstykke_matrikelnr` varchar(10) NULL,
+    `jordstykke_esrejendomsnr` int NULL,
+    `jordstykke_ejerlav` int NULL,
     `kvh` varchar(12) NOT NULL,
     `hoejde` int NULL,
     `adgangspunktid` varchar(36) NOT NULL,
@@ -356,12 +327,12 @@ CREATE TABLE `adresse` (
     FOREIGN KEY (`ejerlav`) REFERENCES `ejerlav` (`id`),
     FOREIGN KEY (`adgangsadresse`) REFERENCES `adgangsadresse` (`id`),
     FOREIGN KEY (`region`) REFERENCES `region` (`id`),
-    FOREIGN KEY (`jordstykke`) REFERENCES `jordstykke` (`id`),
     FOREIGN KEY (`sogn`) REFERENCES `sogn` (`id`),
     FOREIGN KEY (`politikreds`) REFERENCES `politikreds` (`id`),
     FOREIGN KEY (`retskreds`) REFERENCES `retskreds` (`id`),
     FOREIGN KEY (`opstillingskreds`) REFERENCES `opstillingskreds` (`id`),
     FOREIGN KEY (`zone`) REFERENCES `zone` (`id`),
+    FOREIGN KEY (`jordstykke_ejerlav`) REFERENCES `ejerlav` (`id`),
     FOREIGN KEY (`vejpunkt`) REFERENCES `vejpunkt` (`id`),
     FOREIGN KEY (`afstemningsomraade`) REFERENCES `afstemningsomraade` (`id`),
     FOREIGN KEY (`navngivenvej`) REFERENCES `navngivenvej` (`id`),
@@ -377,7 +348,8 @@ INSERT INTO adresse (
     ejerlav, matrikelnr, esrejendomsnr, etrs89koordinat_oest, etrs89koordinat_nord,
     wgs84koordinat_bredde, wgs84koordinat_laengde, noejagtighed, kilde, tekniskstandard,
     ddkn_m100, ddkn_km1, ddkn_km10, adressepunktaendringsdato, adgangsadresse, region,
-    kvhx, sogn, politikreds, retskreds, opstillingskreds, zone, kvh, hoejde,
+    kvhx, sogn, politikreds, retskreds, opstillingskreds, zone, jordstykke_matrikelnr,
+    jordstykke_esrejendomsnr, jordstykke_ejerlav, kvh, hoejde,
     adgangspunktid, vejpunkt, afstemningsomraade, brofast, navngivenvej,
     menighedsraadsafstemningsomraade, ikrafttraedelse, nedlagt, darstatus,
     storkreds, valglandsdel, landsdel, betegnelse
@@ -418,6 +390,9 @@ SELECT
         ,retskreds.id AS retskreds
         ,opstillingskreds.id AS opstillingskreds
         ,zone.id AS zone
+        ,jordstykke_matrikelnr
+        ,jordstykke_esrejendomsnr
+        ,ejerlav.id AS jordstykke_ejerlav
         ,raw.kvh AS kvh
         ,raw.hoejde AS hoejde
         ,raw.adgangspunktid AS adgangspunktid
